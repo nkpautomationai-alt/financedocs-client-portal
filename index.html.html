@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinanceDocs — Upload your documents</title>
+<style>
+  :root {
+    --paper: #FFFFFF;
+    --surface: #F6F8FC;
+    --line: #E6EAF2;
+    --line-soft: #F0F2F7;
+    --ink: #0F1728;
+    --ink-2: #5B6478;
+    --ink-3: #96A0B4;
+    --blue: #2451E0;
+    --blue-ink: #16337E;
+    --blue-tint: #EEF2FE;
+    --green: #1B7A4B;
+    --amber: #C77B1E;
+    --red: #C23B3B;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; min-height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  button, input { font-family: inherit; }
+
+  .portal-shell {
+    max-width: 620px; margin: 0 auto; padding: 32px 20px 64px;
+  }
+
+  .portal-header {
+    display: flex; align-items: center; gap: 10px; padding: 8px 0 28px;
+  }
+  .logo-mark {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--blue);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .logo-word { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .logo-word span { color: var(--blue); }
+
+  .panel {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+  }
+  .panel-head {
+    padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center;
+    justify-content: space-between;
+  }
+  .panel-head span.title { font-size: 13.5px; font-weight: 600; }
+
+  .page-head { margin-bottom: 20px; }
+  .page-head h1 { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+  .page-head p { font-size: 13.5px; color: var(--ink-2); margin: 6px 0 0; max-width: 520px; }
+
+  .row-meta { font-size: 12px; color: var(--ink-3); }
+
+  /* Client summary card */
+  .upload-client-card { padding: 16px 18px; }
+  .upload-summary { display: flex; align-items: center; gap: 16px; }
+  .upload-client-info { min-width: 0; }
+  .client-avatar {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--blue-tint); color: var(--blue-ink);
+    font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .client-name { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+  .client-email { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .upload-client-id { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+
+  /* Document rows */
+  .panel-body { padding: 6px 8px; }
+  .upload-file-icon {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--ink-2);
+  }
+  .doc-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 10px;
+    border-bottom: 1px solid var(--line-soft); flex-wrap: wrap;
+  }
+  .doc-row:last-child { border-bottom: none; }
+  .doc-info { flex: 1; min-width: 160px; }
+  .doc-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .doc-status { margin-top: 4px; }
+  .doc-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .doc-file-input { font-size: 12px; color: var(--ink-2); max-width: 190px; }
+  .doc-upload-btn {
+    display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--blue-tint);
+    color: var(--blue-ink); font-size: 12.5px; font-weight: 600; padding: 7px 14px; border-radius: 8px;
+    cursor: pointer; white-space: nowrap; transition: opacity 120ms ease;
+  }
+  .doc-upload-btn:hover { opacity: 0.85; }
+  .doc-upload-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+  .doc-upload-btn.received { background: #E9F6EF; color: var(--green); }
+  .doc-message { width: 100%; font-size: 12px; margin-top: 4px; }
+  .doc-message.info { color: var(--ink-3); }
+  .doc-message.success { color: var(--green); }
+  .doc-message.error { color: #C0392B; }
+  .doc-message.warn { color: var(--amber); }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge.completed { background: #E9F6EF; color: var(--green); }
+  .badge.completed .badge-dot { background: var(--green); }
+  .badge.pending { background: #FCF3E7; color: var(--amber); }
+  .badge.pending .badge-dot { background: var(--amber); }
+
+  /* State panel (loading / error / no-client) */
+  .upload-state-panel {
+    min-height: 220px; border: 1px dashed #D7DEEC; border-radius: 12px; background: #FBFCFE;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 32px;
+  }
+  .placeholder-icon {
+    width: 52px; height: 52px; border-radius: 14px; background: var(--blue-tint);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 18px;
+  }
+  .placeholder-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .placeholder-desc { font-size: 13.5px; color: var(--ink-2); max-width: 380px; line-height: 1.6; }
+  .upload-spinner {
+    width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--line);
+    border-top-color: var(--blue); animation: docflow-spin 0.8s linear infinite; margin-bottom: 14px;
+  }
+  @keyframes docflow-spin { to { transform: rotate(360deg); } }
+
+  .portal-footer {
+    text-align: center; font-size: 11.5px; color: var(--ink-3); margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="portal-shell">
+  <div class="portal-header">
+    <div class="logo-mark">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h5l2 2h5a2 2 0 0 1 2 2v2"/><path d="M2 13.5V20a2 2 0 0 0 2 2h13.5"/><path d="m9 17 2 2 4-4"/></svg>
+    </div>
+    <div class="logo-word">Finance<span>Docs</span></div>
+  </div>
+
+  <div class="page-head">
+    <h1>Upload your documents</h1>
+    <p>Securely upload the documents your advisor has requested. You can return to this page any time using the same link.</p>
+  </div>
+
+  <div id="uploadsContainer"></div>
+
+  <div class="portal-footer">Having trouble? Reply to the email you received or contact your advisor directly.</div>
+</div>
+
+<script>
+  const UPLOAD_PAGE_API = "https://nkpflow.app.n8n.cloud/webhook/upload-page";
+  const UPLOAD_DOCUMENT_API = "https://nkpflow.app.n8n.cloud/webhook/upload-document";
+
+  const ICONS = {
+    uploads: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>',
+    templates: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
+  };
+
+  let uploadsClientId = null;
+  let uploadsToken = null;
+  let uploadsData = null;
+
+  function escapeHTML(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  function initialsOf(name) {
+    if (!name) return "?";
+    const parts = String(name).trim().split(/\s+/);
+    return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || "?";
+  }
+
+  function getClientIdFromURL() {
+    return new URLSearchParams(window.location.search).get("client");
+  }
+
+  function getTokenFromURL() {
+    return new URLSearchParams(window.location.search).get("token");
+  }
+
+  function uploadStatePanel(iconKey, title, desc, showSpinner) {
+    return `
+      <div class="upload-state-panel">
+        ${showSpinner ? '<div class="upload-spinner"></div>' : `<div class="placeholder-icon">${ICONS[iconKey] || ICONS.uploads}</div>`}
+        <div class="placeholder-title">${escapeHTML(title)}</div>
+        <div class="placeholder-desc">${escapeHTML(desc)}</div>
+      </div>
+    `;
+  }
+
+  async function initUploadsPage() {
+    uploadsClientId = getClientIdFromURL();
+    uploadsToken = getTokenFromURL();
+    await loadUploadsData();
+  }
+
+  async function loadUploadsData() {
+    const container = document.getElementById("uploadsContainer");
+    if (!container) return;
+
+    if (!uploadsClientId) {
+      container.innerHTML = uploadStatePanel(
+        "uploads",
+        "No client specified",
+        "This link is missing a client reference. Please use the exact link your advisor sent you.",
+        false
+      );
+      return;
+    }
+
+    if (!uploadsToken) {
+      container.innerHTML = uploadStatePanel(
+        "uploads",
+        "This link is incomplete",
+        "This link is missing an access code. Please use the exact link your advisor sent you, rather than a partial or retyped version.",
+        false
+      );
+      return;
+    }
+
+    container.innerHTML = uploadStatePanel("uploads", "Loading client...", "Fetching your details and document checklist.", true);
+
+    try {
+      const res = await fetch(`${UPLOAD_PAGE_API}?client=${encodeURIComponent(uploadsClientId)}&token=${encodeURIComponent(uploadsToken)}`);
+      if (res.status === 401 || res.status === 403) throw new Error("Invalid or expired link");
+      if (!res.ok) throw new Error("Request failed with status " + res.status);
+      const data = await res.json();
+      if (!data || !data.client) throw new Error("Unexpected response shape");
+      uploadsData = data;
+      renderUploadsContainer();
+    } catch (err) {
+      console.error("Uploads API Error:", err);
+      container.innerHTML = uploadStatePanel(
+        "uploads",
+        "Could not load upload portal",
+        "This link may be invalid or expired. Please contact your advisor for a new link.",
+        false
+      );
+    }
+  }
+
+  function renderUploadsContainer() {
+    const container = document.getElementById("uploadsContainer");
+    if (!container || !uploadsData) return;
+
+    const client = uploadsData.client || {};
+    const documents = Array.isArray(uploadsData.documents) ? uploadsData.documents : [];
+    const receivedCount = documents.filter(d => String(d.status).toLowerCase() === "received").length;
+
+    container.innerHTML = `
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <span class="title">Your details</span>
+          <span class="row-meta">${receivedCount} / ${documents.length} received</span>
+        </div>
+        <div class="upload-client-card">
+          <div class="upload-summary">
+            <div class="client-avatar">${initialsOf(client.clientName)}</div>
+            <div class="upload-client-info">
+              <div class="client-name">${escapeHTML(client.clientName || "Unknown client")}</div>
+              <div class="client-email">${escapeHTML(client.email || "No email on file")}</div>
+              <div class="upload-client-id">Client ID: ${escapeHTML(client.clientId || uploadsClientId)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><span class="title">Required documents</span></div>
+        <div class="panel-body" id="documentList">
+          ${documents.length
+            ? documents.map((doc, i) => documentRowHTML(doc, i)).join("")
+            : `<div class="doc-row"><span class="row-label">No documents have been requested yet.</span></div>`}
+        </div>
+      </div>
+    `;
+
+    documents.forEach((doc, i) => {
+      const btn = document.getElementById(`uploadBtn-${i}`);
+      if (btn) btn.addEventListener("click", () => handleUpload(i));
+    });
+  }
+
+  function documentRowHTML(doc, index) {
+    const status = String(doc.status || "Pending");
+    const isReceived = status.toLowerCase() === "received";
+    return `
+      <div class="doc-row" id="docRow-${index}">
+        <div class="upload-file-icon">${ICONS.templates}</div>
+        <div class="doc-info">
+          <div class="doc-name">${escapeHTML(doc.document)}</div>
+          <div class="doc-status" id="docStatus-${index}">
+            <span class="badge ${isReceived ? 'completed' : 'pending'}"><span class="badge-dot"></span>${isReceived ? 'Received' : 'Pending'}</span>
+          </div>
+        </div>
+        <div class="doc-actions">
+          <input type="file" class="doc-file-input" id="fileInput-${index}" />
+          <button class="doc-upload-btn ${isReceived ? 'received' : ''}" id="uploadBtn-${index}">
+            ${isReceived ? 'Re-upload' : 'Upload'}
+          </button>
+        </div>
+        <div class="doc-message" id="docMessage-${index}"></div>
+      </div>
+    `;
+  }
+
+  function setDocMessage(index, text, type) {
+    const el = document.getElementById(`docMessage-${index}`);
+    if (el) el.innerHTML = text ? `<span class="doc-message ${type}">${escapeHTML(text)}</span>` : "";
+  }
+
+  async function handleUpload(index) {
+    const doc = uploadsData.documents[index];
+    const fileInput = document.getElementById(`fileInput-${index}`);
+    const btn = document.getElementById(`uploadBtn-${index}`);
+    const file = fileInput && fileInput.files && fileInput.files[0];
+
+    if (!file) {
+      setDocMessage(index, "Please choose a file before uploading.", "warn");
+      return;
+    }
+
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Uploading…";
+    setDocMessage(index, `Uploading ${file.name}…`, "info");
+
+    try {
+      const formData = new FormData();
+      formData.append("clientId", (uploadsData.client && uploadsData.client.clientId) || uploadsClientId);
+      formData.append("documentName", doc.document);
+      formData.append("token", uploadsToken || "");
+      formData.append("file", file);
+
+      const res = await fetch(UPLOAD_DOCUMENT_API, { method: "POST", body: formData });
+      if (res.status === 401 || res.status === 403) throw new Error("Invalid or expired link");
+      if (!res.ok) throw new Error("Upload failed with status " + res.status);
+
+      setDocMessage(index, "Upload successful. Refreshing status…", "success");
+      await loadUploadsData();
+    } catch (err) {
+      console.error("Upload error:", err);
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+      const message = err.message === "Invalid or expired link"
+        ? "This link may be invalid or expired. Please contact your advisor for a new link."
+        : "Upload failed. Please try again.";
+      setDocMessage(index, message, "error");
+    }
+  }
+
+  initUploadsPage();
+</script>
+</body>
+</html>
